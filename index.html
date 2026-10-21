@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173b35">
+<title>Control de Trabajos</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--green:#173b35;--green2:#24564c;--cream:#f5f4ef;--card:#fff;--text:#1d2926;--muted:#6d7975;--line:#e3e7e3;--red:#b34336;--gold:#b77c22}
+*{box-sizing:border-box}body{margin:0;background:var(--cream);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+header{background:var(--green);color:white;padding:calc(20px + env(safe-area-inset-top)) 20px 22px;border-radius:0 0 24px 24px}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-size:25px;line-height:1.15;margin:0;font-weight:750;letter-spacing:-.5px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;opacity:.75;margin-bottom:7px}.date{font-size:13px;opacity:.8;margin-top:8px}
+main{padding:18px 16px;max-width:760px;margin:auto}.summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:-2px}.stat{background:var(--card);padding:15px;border-radius:16px;border:1px solid var(--line);min-width:0}.stat .label{font-size:12px;color:var(--muted);margin-bottom:8px}.stat .value{font-size:22px;font-weight:750;letter-spacing:-.5px;overflow-wrap:anywhere}.stat.wide{grid-column:1/-1;background:#e6eee8;border-color:#d3e0d6}.positive{color:var(--green2)}.negative{color:var(--red)}
+.sectionhead{display:flex;align-items:center;justify-content:space-between;margin:25px 2px 12px;gap:12px}h2{font-size:18px;margin:0}.subtle{font-size:12px;color:var(--muted)}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}.primary{background:var(--green);color:#fff;border-radius:13px;padding:12px 15px;font-weight:650}.primary:active{opacity:.85}.smallbtn{background:#e7ece8;color:var(--green);border-radius:10px;padding:9px 11px;font-weight:650;font-size:13px}.danger{background:#fae9e6;color:var(--red)}
+.filters{display:flex;gap:8px;overflow:auto;padding-bottom:4px;margin-bottom:12px}.filter{white-space:nowrap;border:1px solid var(--line);background:#fff;color:var(--muted);padding:8px 12px;border-radius:99px;font-size:13px}.filter.active{background:var(--green);color:#fff;border-color:var(--green)}
+.joblist{display:grid;gap:10px}.job{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px;width:100%;text-align:left;color:inherit}.jobtop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.jobname{font-weight:750;font-size:16px;overflow-wrap:anywhere}.client{color:var(--muted);font-size:13px;margin-top:4px}.badge{font-size:11px;padding:5px 8px;border-radius:99px;background:#e6eee8;color:var(--green2);white-space:nowrap}.badge.done{background:#ecebe6;color:#686c64}.jobbottom{display:flex;justify-content:space-between;gap:10px;margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}.jobmetric small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}.jobmetric strong{font-size:14px}.empty{padding:28px 18px;text-align:center;color:var(--muted);border:1px dashed #cbd4ce;border-radius:16px;background:#ffffff80}.empty b{display:block;color:var(--text);margin-bottom:7px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:10px 8px calc(10px + env(safe-area-inset-bottom));z-index:5}.navbtn{background:none;color:var(--muted);font-size:11px;display:grid;justify-items:center;gap:4px;padding:4px 12px}.navbtn span{font-size:21px}.navbtn.active{color:var(--green);font-weight:750}
+.view{display:none}.view.active{display:block}.back{background:none;color:#fff;font-size:14px;padding:5px 0;margin-bottom:15px}.detailhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.detailtitle{font-size:24px;font-weight:800;overflow-wrap:anywhere}.detailmeta{font-size:13px;opacity:.8;margin-top:6px}.detailactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.pilltabs{display:flex;gap:8px;margin:18px 0 12px}.pilltabs button{flex:1;background:#e5eae5;color:var(--green);padding:10px;border-radius:11px;font-size:13px;font-weight:700}.pilltabs button.active{background:var(--green);color:#fff}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;margin:12px 0}.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}.row:last-child{border-bottom:0}.row span:first-child{color:var(--muted)}.movement{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}.movement:last-child{border-bottom:0}.movement-title{font-weight:650;font-size:14px}.movement-meta{font-size:12px;color:var(--muted);margin-top:4px}.movement-amount{font-weight:750;white-space:nowrap}.income{color:var(--green2)}.expense{color:var(--red)}
+form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight:650;color:#43504b}input,select,textarea{width:100%;border:1px solid #d7ded8;border-radius:11px;padding:12px;background:#fff;color:var(--text);min-height:45px}textarea{min-height:85px;resize:vertical}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.formactions{display:flex;gap:9px;margin-top:4px}.formactions button{flex:1}.screen-title{font-size:23px;font-weight:800;margin:6px 0 4px}.screen-sub{font-size:13px;color:var(--muted);margin-bottom:18px}.notice{font-size:12px;line-height:1.5;color:var(--muted);background:#fff8e8;border:1px solid #f0dfb8;padding:12px;border-radius:12px;margin-top:16px}
+@media(min-width:600px){.summary{grid-template-columns:repeat(3,1fr)}.stat.wide{grid-column:auto}.joblist{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header id="header">
+  <div class="eyebrow">Gestión de empresa</div>
+  <div class="topline"><h1>Control de<br>Trabajos</h1><button class="primary" id="newJobTop">+ Trabajo</button></div>
+  <div class="date" id="today"></div>
+</header>
+<main>
+  <section id="homeView" class="view active">
+    <div class="summary">
+      <div class="stat"><div class="label">Ingresos totales</div><div class="value" id="sumIncome">0 €</div></div>
+      <div class="stat"><div class="label">Gastos totales</div><div class="value" id="sumExpense">0 €</div></div>
+      <div class="stat wide"><div class="label">Beneficio registrado</div><div class="value positive" id="sumProfit">0 €</div></div>
+    </div>
+    <div class="sectionhead"><h2>Trabajos</h2><span class="subtle" id="jobCount">0 trabajos</span></div>
+    <div class="filters">
+      <button class="filter active" data-filter="all">Todos</button><button class="filter" data-filter="active">En curso</button><button class="filter" data-filter="done">Finalizados</button>
+    </div>
+    <div id="jobList" class="joblist"></div>
+  </section>
+
+  <section id="detailView" class="view">
+    <div class="panel" id="detailPanel"></div>
+    <div class="pilltabs"><button class="active" data-detailtab="movements">Movimientos</button><button data-detailtab="info">Datos del trabajo</button></div>
+    <div id="detailContent"></div>
+    <div class="detailactions"><button class="primary" id="addIncome">+ Ingreso</button><button class="primary" id="addExpense">− Gasto</button></div>
+  </section>
+
+  <section id="jobFormView" class="view">
+    <div class="screen-title" id="jobFormTitle">Nuevo trabajo</div><div class="screen-sub">Introduce los datos básicos del trabajo.</div>
+    <form id="jobForm">
+      <label>Nombre del trabajo<input name="name" required placeholder="Ej. Reforma de vivienda"></label>
+      <label>Cliente<input name="client" placeholder="Nombre del cliente"></label>
+      <div class="formgrid"><label>Fecha<input type="date" name="date" required></label><label>Estado<select name="status"><option value="active">En curso</option><option value="done">Finalizado</option></select></label></div>
+      <label>Presupuesto (€)<input name="budget" type="number" min="0" step="0.01" placeholder="0,00"></label>
+      <label>Descripción / notas<textarea name="notes" placeholder="Detalles del trabajo..."></textarea></label>
+      <div class="formactions"><button type="button" class="smallbtn" data-go-home>Cancelar</button><button class="primary" type="submit">Guardar trabajo</button></div>
+    </form>
+  </section>
+
+  <section id="movementFormView" class="view">
+    <div class="screen-title" id="movementFormTitle">Nuevo movimiento</div><div class="screen-sub" id="movementJobName"></div>
+    <form id="movementForm">
+      <label>Tipo<select name="type"><option value="expense">Gasto</option><option value="income">Ingreso</option></select></label>
+      <label>Concepto<input name="concept" required placeholder="Ej. Materiales, anticipo..."></label>
+      <div class="formgrid"><label>Importe (€)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0,00"></label><label>Fecha<input name="date" type="date" required></label></div>
+      <label>Categoría<select name="category"><option>Materiales</option><option>Mano de obra</option><option>Transporte</option><option>Herramientas</option><option>Subcontrata</option><option>Cobro de cliente</option><option>Otros</option></select></label>
+      <label>Proveedor / cliente (opcional)<input name="party" placeholder="Nombre"></label>
+      <label>Notas (opcional)<textarea name="notes" placeholder="Detalles adicionales..."></textarea></label>
+      <div class="formactions"><button type="button" class="smallbtn" data-cancel-movement>Cancelar</button><button class="primary" type="submit">Guardar movimiento</button></div>
+    </form>
+  </section>
+
+  <section id="reportsView" class="view">
+    <div class="screen-title">Resumen económico</div><div class="screen-sub">Totales de todos los trabajos registrados.</div>
+    <div class="summary">
+      <div class="stat"><div class="label">Ingresos</div><div class="value" id="reportIncome">0 €</div></div>
+      <div class="stat"><div class="label">Gastos</div><div class="value" id="reportExpense">0 €</div></div>
+      <div class="stat wide"><div class="label">Resultado</div><div class="value positive" id="reportProfit">0 €</div></div>
+    </div>
+    <div class="panel" id="reportByStatus"></div>
+    <div class="panel"><button class="smallbtn" id="exportBtn">Exportar datos (JSON)</button> <button class="smallbtn" id="csvBtn">Exportar movimientos (CSV)</button><p class="subtle">Guarda una copia de tus datos periódicamente. Los archivos exportados pueden guardarse en Archivos.</p></div>
+    <div class="notice"><b>Importante:</b> esta versión guarda los datos en el almacenamiento del navegador de este iPad. No borres los datos de Safari ni uses navegación privada. La exportación sirve como copia de seguridad; todavía no hay sincronización entre dispositivos.</div>
+  </section>
+
+  <section id="settingsView" class="view">
+    <div class="screen-title">Datos y seguridad</div><div class="screen-sub">Copia de seguridad y mantenimiento de tus registros.</div>
+    <div class="panel"><h2>Copias de seguridad</h2><p class="subtle">Exporta una copia para guardarla en la app Archivos.</p><button class="primary" id="backupBtn">Crear copia de seguridad</button><div style="height:10px"></div><label>Restaurar una copia JSON<input type="file" id="restoreFile" accept=".json,application/json"></label></div>
+    <div class="panel"><h2>Borrar todos los datos</h2><p class="subtle">Esta acción elimina los trabajos y movimientos guardados en este navegador.</p><button class="smallbtn danger" id="clearBtn">Borrar todos los datos</button></div>
+    <div class="notice">Consejo: para proteger tus registros, exporta una copia de seguridad con frecuencia y guárdala en iCloud Drive u otra ubicación segura.</div>
+  </section>
+</main>
+<nav>
+  <button class="navbtn active" data-view="homeView"><span>▦</span>Trabajos</button>
+  <button class="navbtn" data-view="reportsView"><span>▥</span>Resumen</button>
+  <button class="navbtn" data-view="settingsView"><span>⚙</span>Ajustes</button>
+</nav>
+<input type="file" id="restoreHidden" accept=".json,application/json" hidden>
+<script>
+const KEY='controlTrabajosDataV1';
+let data=loadData(), currentJobId=null, jobFilter='all', movementType='expense', editingJobId=null, detailTab='movements';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+function loadData(){try{return JSON.parse(localStorage.getItem(KEY))||{jobs:[]}}catch{return {jobs:[]}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function money(n){return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(n)||0)}
+function fmtDate(s){if(!s)return 'Sin fecha';let [y,m,d]=s.split('-');return `${d}/${m}/${y}`}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function totals(job){let income=0,expense=0;(job.movements||[]).forEach(m=>{if(m.type==='income')income+=Number(m.amount)||0;else expense+=Number(m.amount)||0});return {income,expense,profit:income-expense}}
+function allTotals(){return data.jobs.reduce((t,j)=>{let x=totals(j);t.income+=x.income;t.expense+=x.expense;return t},{income:0,expense:0})}
+function showView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));$('#header').style.display=(id==='homeView'||id==='detailView')?'block':'none';window.scrollTo(0,0)}
+function renderAll(){renderHome();renderReports();if(currentJobId&&$('#detailView').classList.contains('active'))renderDetail()}
+function renderHome(){let t=allTotals();$('#sumIncome').textContent=money(t.income);$('#sumExpense').textContent=money(t.expense);let p=t.income-t.expense;$('#sumProfit').textContent=money(p);$('#sumProfit').className='value '+(p<0?'negative':'positive');let jobs=[...data.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt).filter(j=>jobFilter==='all'||j.status===jobFilter);$('#jobCount').textContent=`${data.jobs.length} ${data.jobs.length===1?'trabajo':'trabajos'}`;$('#jobList').innerHTML=jobs.length?jobs.map(j=>{let x=totals(j);return `<button class="job" data-open-job="${j.id}"><div class="jobtop"><div><div class="jobname">${esc(j.name)}</div><div class="client">${esc(j.client||'Sin cliente')} · ${fmtDate(j.date)}</div></div><span class="badge ${j.status==='done'?'done':''}">${j.status==='done'?'Finalizado':'En curso'}</span></div><div class="jobbottom"><div class="jobmetric"><small>Ingresos</small><strong>${money(x.income)}</strong></div><div class="jobmetric"><small>Gastos</small><strong>${money(x.expense)}</strong></div><div class="jobmetric"><small>Beneficio</small><strong class="${x.profit<0?'negative':'positive'}">${money(x.profit)}</strong></div></div></button>`}).join(''):`<div class="empty"><b>${data.jobs.length?'No hay trabajos en este filtro':'Todavía no hay trabajos'}</b>${data.jobs.length?'Prueba con otro filtro.':'Pulsa “+ Trabajo” para crear tu primer registro.'}</div>`}
+function renderDetail(){let j=data.jobs.find(x=>x.id===currentJobId);if(!j){showView('homeView');return}let t=totals(j);$('#detailPanel').innerHTML=`<button class="back" id="backHome">← Todos los trabajos</button><div class="detailhead"><div><div class="detailtitle">${esc(j.name)}</div><div class="detailmeta">${esc(j.client||'Sin cliente')} · ${fmtDate(j.date)}</div></div><span class="badge ${j.status==='done'?'done':''}">${j.status==='done'?'Finalizado':'En curso'}</span></div><div class="summary" style="margin-top:18px"><div class="stat"><div class="label">Ingresos</div><div class="value">${money(t.income)}</div></div><div class="stat"><div class="label">Gastos</div><div class="value">${money(t.expense)}</div></div><div class="stat wide"><div class="label">Beneficio</div><div class="value ${t.profit<0?'negative':'positive'}">${money(t.profit)}</div></div></div><div class="detailactions"><button class="smallbtn" id="editJob">Editar trabajo</button><button class="smallbtn danger" id="deleteJob">Eliminar</button></div>`;
+if(detailTab==='movements'){let ms=[...(j.movements||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);$('#detailContent').innerHTML=`<div class="panel"><div class="sectionhead" style="margin-top:0"><h2>Movimientos</h2><span class="subtle">${ms.length} registros</span></div>${ms.length?ms.map(m=>`<div class="movement"><div><div class="movement-title">${esc(m.concept)}</div><div class="movement-meta">${fmtDate(m.date)} · ${esc(m.category||'Otros')}${m.party?' · '+esc(m.party):''}</div>${m.notes?`<div class="movement-meta">${esc(m.notes)}</div>`:''}<button class="smallbtn danger" style="margin-top:7px;padding:5px 8px" data-delete-movement="${m.id}">Eliminar</button></div><div class="movement-amount ${m.type==='income'?'income':'expense'}">${m.type==='income'?'+':'−'}${money(m.amount)}</div></div>`).join(''):'<div class="empty">Todavía no hay movimientos.<br>Añade un ingreso o un gasto.</div>'}</div>`}
+else{$('#detailContent').innerHTML=`<div class="panel"><div class="row"><span>Cliente</span><b>${esc(j.client||'—')}</b></div><div class="row"><span>Fecha</span><b>${fmtDate(j.date)}</b></div><div class="row"><span>Estado</span><b>${j.status==='done'?'Finalizado':'En curso'}</b></div><div class="row"><span>Presupuesto</span><b>${money(j.budget)}</b></div><div class="row"><span>Diferencia vs. presupuesto</span><b>${money((Number(j.budget)||0)-t.expense)}</b></div><div class="row"><span>Descripción / notas</span><b>${esc(j.notes||'—')}</b></div></div>`}
+$$('[data-detailtab]').forEach(b=>b.classList.toggle('active',b.dataset.detailtab===detailTab));
+}
+function renderReports(){let t=allTotals(),p=t.income-t.expense;$('#reportIncome').textContent=money(t.income);$('#reportExpense').textContent=money(t.expense);$('#reportProfit').textContent=money(p);$('#reportProfit').className='value '+(p<0?'negative':'positive');let active=data.jobs.filter(j=>j.status==='active').length,done=data.jobs.filter(j=>j.status==='done').length;$('#reportByStatus').innerHTML=`<h2>Estado de los trabajos</h2><div class="row"><span>En curso</span><b>${active}</b></div><div class="row"><span>Finalizados</span><b>${done}</b></div><div class="row"><span>Total de trabajos</span><b>${data.jobs.length}</b></div>`}
+function openJobForm(job=null){editingJobId=job?.id||null;$('#jobFormTitle').textContent=job?'Editar trabajo':'Nuevo trabajo';let f=$('#jobForm');f.reset();f.elements.date.value=job?.date||todayISO();f.elements.status.value=job?.status||'active';f.elements.name.value=job?.name||'';f.elements.client.value=job?.client||'';f.elements.budget.value=job?.budget??'';f.elements.notes.value=job?.notes||'';showView('jobFormView')}
+function openMovement(type){movementType=type;let j=data.jobs.find(x=>x.id===currentJobId);$('#movementFormTitle').textContent=type==='income'?'Añadir ingreso':'Añadir gasto';$('#movementJobName').textContent=j?.name||'';let f=$('#movementForm');f.reset();f.elements.type.value=type;f.elements.date.value=todayISO();showView('movementFormView')}
+function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+function exportCSV(){let rows=[['Trabajo','Cliente','Fecha','Tipo','Concepto','Categoría','Importe EUR','Proveedor/cliente','Notas']];data.jobs.forEach(j=>(j.movements||[]).forEach(m=>rows.push([j.name,j.client,j.date,m.type==='income'?'Ingreso':'Gasto',m.concept,m.category,m.amount,m.party,m.notes])));download('movimientos-control-trabajos.csv','\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
+$('#today').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
+$('#newJobTop').addEventListener('click',()=>openJobForm());
+$$('.navbtn').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+$$('.filter').forEach(b=>b.addEventListener('click',()=>{jobFilter=b.dataset.filter;$$('.filter').forEach(x=>x.classList.toggle('active',x===b));renderHome()}));
+$('#jobList').addEventListener('click',e=>{let b=e.target.closest('[data-open-job]');if(b){currentJobId=b.dataset.openJob;detailTab='movements';showView('detailView');renderDetail()}});
+$('#jobForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,old=data.jobs.find(j=>j.id===editingJobId),job={id:old?.id||uid(),createdAt:old?.createdAt||Date.now(),name:f.elements.name.value.trim(),client:f.elements.client.value.trim(),date:f.elements.date.value,status:f.elements.status.value,budget:Number(f.elements.budget.value)||0,notes:f.elements.notes.value.trim(),movements:old?.movements||[]};if(old)data.jobs=data.jobs.map(j=>j.id===old.id?job:j);else data.jobs.push(job);currentJobId=job.id;save();showView('detailView');renderDetail()});
+$('#movementForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,j=data.jobs.find(x=>x.id===currentJobId);if(!j)return;j.movements.push({id:uid(),createdAt:Date.now(),type:f.elements.type.value,concept:f.elements.concept.value.trim(),amount:Number(f.elements.amount.value),date:f.elements.date.value,category:f.elements.category.value,party:f.elements.party.value.trim(),notes:f.elements.notes.value.trim()});save();showView('detailView');renderDetail()});
+$('#detailPanel').addEventListener('click',e=>{if(e.target.closest('#backHome'))showView('homeView');if(e.target.closest('#editJob'))openJobForm(data.jobs.find(j=>j.id===currentJobId));if(e.target.closest('#deleteJob')){if(confirm('¿Eliminar este trabajo y todos sus movimientos?')){data.jobs=data.jobs.filter(j=>j.id!==currentJobId);currentJobId=null;save();showView('homeView')}}});
+$('#detailContent').addEventListener('click',e=>{let b=e.target.closest('[data-delete-movement]');if(b&&confirm('¿Eliminar este movimiento?')){let j=data.jobs.find(x=>x.id===currentJobId);j.movements=j.movements.filter(m=>m.id!==b.dataset.deleteMovement);save();renderDetail()}});
+$$('[data-detailtab]').forEach(b=>b.addEventListener('click',()=>{detailTab=b.dataset.detailtab;renderDetail()}));
+$('#addIncome').addEventListener('click',()=>openMovement('income'));$('#addExpense').addEventListener('click',()=>openMovement('expense'));
+$$('[data-go-home]').forEach(b=>b.addEventListener('click',()=>showView('homeView')));$$('[data-cancel-movement]').forEach(b=>b.addEventListener('click',()=>{showView('detailView');renderDetail()}));
+$('#exportBtn').addEventListener('click',()=>download('copia-control-trabajos.json',JSON.stringify(data,null,2),'application/json'));
+$('#backupBtn').addEventListener('click',()=>download('copia-control-trabajos-'+todayISO()+'.json',JSON.stringify(data,null,2),'application/json'));
+$('#csvBtn').addEventListener('click',exportCSV);
+$('#clearBtn').addEventListener('click',()=>{if(confirm('¿Seguro que quieres borrar TODOS los trabajos y movimientos? Esta acción no se puede deshacer.')){data={jobs:[]};currentJobId=null;save();showView('homeView')}});
+$('#restoreFile').addEventListener('change',async e=>{let file=e.target.files[0];if(!file)return;try{let parsed=JSON.parse(await file.text());if(!parsed||!Array.isArray(parsed.jobs))throw Error('Formato no válido');if(confirm('La restauración sustituirá los datos actuales. ¿Continuar?')){data=parsed;save();alert('Copia restaurada correctamente.')}}catch(err){alert('No se pudo restaurar la copia. Comprueba que sea un archivo JSON exportado por esta aplicación.')}e.target.value=''});
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+renderAll();
+</script>
+</body>
+</html>

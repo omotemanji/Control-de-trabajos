@@ -1,0 +1,20 @@
+CONTROL DE TRABAJOS — versión inicial
+
+Incluye:
+- Listado de trabajos ordenado por fecha, filtros por estado.
+- Alta y edición de trabajos.
+- Registro de ingresos y gastos por trabajo.
+- Cálculo de totales y beneficio.
+- Resumen general.
+- Exportación JSON y CSV y restauración de copia JSON.
+
+IMPORTANTE:
+Esta app guarda los datos en localStorage del navegador. Antes de usarla para datos reales, prueba la exportación/restauración y guarda copias de seguridad frecuentes. No es software de contabilidad fiscal y no sustituye la gestión oficial de facturas/impuestos.
+
+CÓMO ABRIR:
+1. Para una prueba rápida, abre index.html desde un alojamiento web o un entorno que permita servir archivos web.
+2. Para instalarla como PWA en iPadOS, debe estar servida desde HTTPS (no basta con abrir un archivo local).
+3. En Safari, abre la URL publicada y pulsa Compartir > Añadir a pantalla de inicio.
+4. La instalación PWA y el funcionamiento sin conexión dependen del alojamiento y de la versión de Safari/iPadOS.
+
+El paquete no incluye servidor ni sincronización entre dispositivos.
