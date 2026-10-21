@@ -1,7 +1,7 @@
 {
-  "name": "Control de Trabajos",
-  "short_name": "Trabajos",
-  "description": "Gestión local de trabajos, ingresos y gastos",
+  "name": "Control de Reformas",
+  "short_name": "Reformas",
+  "description": "Gestión de obras de reforma, ingresos y gastos",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -18,3 +18,12 @@ CÓMO ABRIR:
 4. La instalación PWA y el funcionamiento sin conexión dependen del alojamiento y de la versión de Safari/iPadOS.
 
 El paquete no incluye servidor ni sincronización entre dispositivos.
+
+
+CAMBIOS DE LA VERSION PARA REFORMAS
+- Ficha de obra con cliente, teléfono, dirección, fechas, presupuesto y cinco estados: Pendiente, En curso, Terminada, Facturada y Cobrada.
+- Gastos clasificados en Materiales, Gasolina, OTA, Parking, Herramienta, Comida y Otros.
+- En cada gasto puedes indicar si tienes factura del proveedor. No se adjuntan PDF.
+- En materiales, usa la descripción para indicar qué compraste y el campo tienda/proveedor para indicar dónde.
+- Los datos que ya estuvieran guardados se mantienen; los estados antiguos se convierten a los nuevos.
+- Después de actualizar los archivos en GitHub Pages, puede ser necesario cerrar y volver a abrir la aplicación o actualizarla desde Safari.

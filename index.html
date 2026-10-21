@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#173b35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mis Reformas">
 <title>Control de Trabajos</title>
 <link rel="manifest" href="manifest.json">
 <style>
@@ -25,8 +28,8 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
 </head>
 <body>
 <header id="header">
-  <div class="eyebrow">Gestión de empresa</div>
-  <div class="topline"><h1>Control de<br>Trabajos</h1><button class="primary" id="newJobTop">+ Trabajo</button></div>
+  <div class="eyebrow">Gestión de reformas</div>
+  <div class="topline"><h1>Control de<br>Reformas</h1><button class="primary" id="newJobTop">+ Trabajo</button></div>
   <div class="date" id="today"></div>
 </header>
 <main>
@@ -38,7 +41,7 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
     </div>
     <div class="sectionhead"><h2>Trabajos</h2><span class="subtle" id="jobCount">0 trabajos</span></div>
     <div class="filters">
-      <button class="filter active" data-filter="all">Todos</button><button class="filter" data-filter="active">En curso</button><button class="filter" data-filter="done">Finalizados</button>
+      <button class="filter active" data-filter="all">Todos</button><button class="filter" data-filter="pendiente">Pendiente</button><button class="filter" data-filter="en_curso">En curso</button><button class="filter" data-filter="terminada">Terminada</button><button class="filter" data-filter="facturada">Facturada</button><button class="filter" data-filter="cobrada">Cobrada</button>
     </div>
     <div id="jobList" class="joblist"></div>
   </section>
@@ -53,12 +56,17 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
   <section id="jobFormView" class="view">
     <div class="screen-title" id="jobFormTitle">Nuevo trabajo</div><div class="screen-sub">Introduce los datos básicos del trabajo.</div>
     <form id="jobForm">
-      <label>Nombre del trabajo<input name="name" required placeholder="Ej. Reforma de vivienda"></label>
+      <label>Nombre de la obra<input name="name" required placeholder="Ej. Reforma de vivienda"></label>
       <label>Cliente<input name="client" placeholder="Nombre del cliente"></label>
-      <div class="formgrid"><label>Fecha<input type="date" name="date" required></label><label>Estado<select name="status"><option value="active">En curso</option><option value="done">Finalizado</option></select></label></div>
+      <label>Teléfono del cliente<input name="phone" type="tel" placeholder="Teléfono de contacto"></label>
+      <label>Dirección de la obra<input name="address" placeholder="Dirección donde se realiza la reforma"></label>
+      <div class="formgrid"><label>Fecha de inicio<input type="date" name="date" required></label><label>Fecha de finalización<input type="date" name="endDate"></label></div>
+      <label>Estado de la obra<select name="status">
+        <option value="pendiente">Pendiente</option><option value="en_curso">En curso</option><option value="terminada">Terminada</option><option value="facturada">Facturada</option><option value="cobrada">Cobrada</option>
+      </select></label>
       <label>Presupuesto (€)<input name="budget" type="number" min="0" step="0.01" placeholder="0,00"></label>
       <label>Descripción / notas<textarea name="notes" placeholder="Detalles del trabajo..."></textarea></label>
-      <div class="formactions"><button type="button" class="smallbtn" data-go-home>Cancelar</button><button class="primary" type="submit">Guardar trabajo</button></div>
+      <div class="formactions"><button type="button" class="smallbtn" data-go-home>Cancelar</button><button class="primary" type="submit">Guardar obra</button></div>
     </form>
   </section>
 
@@ -66,10 +74,11 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
     <div class="screen-title" id="movementFormTitle">Nuevo movimiento</div><div class="screen-sub" id="movementJobName"></div>
     <form id="movementForm">
       <label>Tipo<select name="type"><option value="expense">Gasto</option><option value="income">Ingreso</option></select></label>
-      <label>Concepto<input name="concept" required placeholder="Ej. Materiales, anticipo..."></label>
-      <div class="formgrid"><label>Importe (€)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0,00"></label><label>Fecha<input name="date" type="date" required></label></div>
-      <label>Categoría<select name="category"><option>Materiales</option><option>Mano de obra</option><option>Transporte</option><option>Herramientas</option><option>Subcontrata</option><option>Cobro de cliente</option><option>Otros</option></select></label>
-      <label>Proveedor / cliente (opcional)<input name="party" placeholder="Nombre"></label>
+      <label id="conceptLabel">Descripción del gasto<input name="concept" required placeholder="Ej. Azulejos, pintura, anticipo..."></label>
+      <div class="formgrid"><label>Importe (€)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0,00"></label><label>Fecha<input type="date" name="date" required></label></div>
+      <label>Categoría<select name="category"></select></label>
+      <label id="partyLabel">Tienda o proveedor (opcional)<input name="party" placeholder="Nombre de la tienda o proveedor"></label>
+      <label id="invoiceLabel">¿Tienes factura del proveedor?<select name="invoiced"><option value="no">No</option><option value="yes">Sí</option></select></label>
       <label>Notas (opcional)<textarea name="notes" placeholder="Detalles adicionales..."></textarea></label>
       <div class="formactions"><button type="button" class="smallbtn" data-cancel-movement>Cancelar</button><button class="primary" type="submit">Guardar movimiento</button></div>
     </form>
@@ -83,6 +92,7 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
       <div class="stat wide"><div class="label">Resultado</div><div class="value positive" id="reportProfit">0 €</div></div>
     </div>
     <div class="panel" id="reportByStatus"></div>
+    <div class="panel" id="reportByCategory"></div>
     <div class="panel"><button class="smallbtn" id="exportBtn">Exportar datos (JSON)</button> <button class="smallbtn" id="csvBtn">Exportar movimientos (CSV)</button><p class="subtle">Guarda una copia de tus datos periódicamente. Los archivos exportados pueden guardarse en Archivos.</p></div>
     <div class="notice"><b>Importante:</b> esta versión guarda los datos en el almacenamiento del navegador de este iPad. No borres los datos de Safari ni uses navegación privada. La exportación sirve como copia de seguridad; todavía no hay sincronización entre dispositivos.</div>
   </section>
@@ -105,7 +115,37 @@ const KEY='controlTrabajosDataV1';
 let data=loadData(), currentJobId=null, jobFilter='all', movementType='expense', editingJobId=null, detailTab='movements';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-function loadData(){try{return JSON.parse(localStorage.getItem(KEY))||{jobs:[]}}catch{return {jobs:[]}}}
+function loadData(){
+  try {
+    const saved=JSON.parse(localStorage.getItem(KEY))||{jobs:[]};
+    if(!Array.isArray(saved.jobs)) return {jobs:[]};
+    saved.jobs.forEach(j=>{
+      j.movements=Array.isArray(j.movements)?j.movements:[];
+      if(j.status==='active') j.status='en_curso';
+      else if(j.status==='done') j.status='terminada';
+      else if(!['pendiente','en_curso','terminada','facturada','cobrada'].includes(j.status)) j.status='en_curso';
+      if(j.phone==null) j.phone='';
+      if(j.address==null) j.address='';
+      if(j.endDate==null) j.endDate='';
+      j.movements.forEach(m=>{if(m.invoiced==null) m.invoiced='no';});
+    });
+    return saved;
+  } catch { return {jobs:[]}; }
+}
+function statusLabel(status){return ({pendiente:'Pendiente',en_curso:'En curso',terminada:'Terminada',facturada:'Facturada',cobrada:'Cobrada'})[status]||'En curso'}
+function expenseCategories(){return ['Materiales','Gasolina','OTA','Parking','Herramienta','Comida','Otros']}
+function incomeCategories(){return ['Anticipo de cliente','Pago parcial','Pago final','Otros']}
+function updateMovementFields(){
+  const f=$('#movementForm'), type=f.elements.type.value, isExpense=type==='expense';
+  const category=f.elements.category, previous=category.value;
+  category.innerHTML=(isExpense?expenseCategories():incomeCategories()).map(c=>`<option>${esc(c)}</option>`).join('');
+  if([...category.options].some(o=>o.value===previous)) category.value=previous;
+  $('#conceptLabel').childNodes[0].textContent=isExpense?'Descripción del gasto':'Concepto del ingreso';
+  f.elements.concept.placeholder=isExpense?'Ej. Azulejos, pintura, tornillos...':'Ej. Anticipo o pago del cliente';
+  $('#partyLabel').childNodes[0].textContent=isExpense?'Tienda o proveedor (opcional)':'Cliente (opcional)';
+  f.elements.party.placeholder=isExpense?'Nombre de la tienda o proveedor':'Nombre del cliente';
+  $('#invoiceLabel').style.display=isExpense?'grid':'none';
+}
 function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function money(n){return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(n)||0)}
@@ -115,29 +155,44 @@ function totals(job){let income=0,expense=0;(job.movements||[]).forEach(m=>{if(m
 function allTotals(){return data.jobs.reduce((t,j)=>{let x=totals(j);t.income+=x.income;t.expense+=x.expense;return t},{income:0,expense:0})}
 function showView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));$('#header').style.display=(id==='homeView'||id==='detailView')?'block':'none';window.scrollTo(0,0)}
 function renderAll(){renderHome();renderReports();if(currentJobId&&$('#detailView').classList.contains('active'))renderDetail()}
-function renderHome(){let t=allTotals();$('#sumIncome').textContent=money(t.income);$('#sumExpense').textContent=money(t.expense);let p=t.income-t.expense;$('#sumProfit').textContent=money(p);$('#sumProfit').className='value '+(p<0?'negative':'positive');let jobs=[...data.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt).filter(j=>jobFilter==='all'||j.status===jobFilter);$('#jobCount').textContent=`${data.jobs.length} ${data.jobs.length===1?'trabajo':'trabajos'}`;$('#jobList').innerHTML=jobs.length?jobs.map(j=>{let x=totals(j);return `<button class="job" data-open-job="${j.id}"><div class="jobtop"><div><div class="jobname">${esc(j.name)}</div><div class="client">${esc(j.client||'Sin cliente')} · ${fmtDate(j.date)}</div></div><span class="badge ${j.status==='done'?'done':''}">${j.status==='done'?'Finalizado':'En curso'}</span></div><div class="jobbottom"><div class="jobmetric"><small>Ingresos</small><strong>${money(x.income)}</strong></div><div class="jobmetric"><small>Gastos</small><strong>${money(x.expense)}</strong></div><div class="jobmetric"><small>Beneficio</small><strong class="${x.profit<0?'negative':'positive'}">${money(x.profit)}</strong></div></div></button>`}).join(''):`<div class="empty"><b>${data.jobs.length?'No hay trabajos en este filtro':'Todavía no hay trabajos'}</b>${data.jobs.length?'Prueba con otro filtro.':'Pulsa “+ Trabajo” para crear tu primer registro.'}</div>`}
-function renderDetail(){let j=data.jobs.find(x=>x.id===currentJobId);if(!j){showView('homeView');return}let t=totals(j);$('#detailPanel').innerHTML=`<button class="back" id="backHome">← Todos los trabajos</button><div class="detailhead"><div><div class="detailtitle">${esc(j.name)}</div><div class="detailmeta">${esc(j.client||'Sin cliente')} · ${fmtDate(j.date)}</div></div><span class="badge ${j.status==='done'?'done':''}">${j.status==='done'?'Finalizado':'En curso'}</span></div><div class="summary" style="margin-top:18px"><div class="stat"><div class="label">Ingresos</div><div class="value">${money(t.income)}</div></div><div class="stat"><div class="label">Gastos</div><div class="value">${money(t.expense)}</div></div><div class="stat wide"><div class="label">Beneficio</div><div class="value ${t.profit<0?'negative':'positive'}">${money(t.profit)}</div></div></div><div class="detailactions"><button class="smallbtn" id="editJob">Editar trabajo</button><button class="smallbtn danger" id="deleteJob">Eliminar</button></div>`;
-if(detailTab==='movements'){let ms=[...(j.movements||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);$('#detailContent').innerHTML=`<div class="panel"><div class="sectionhead" style="margin-top:0"><h2>Movimientos</h2><span class="subtle">${ms.length} registros</span></div>${ms.length?ms.map(m=>`<div class="movement"><div><div class="movement-title">${esc(m.concept)}</div><div class="movement-meta">${fmtDate(m.date)} · ${esc(m.category||'Otros')}${m.party?' · '+esc(m.party):''}</div>${m.notes?`<div class="movement-meta">${esc(m.notes)}</div>`:''}<button class="smallbtn danger" style="margin-top:7px;padding:5px 8px" data-delete-movement="${m.id}">Eliminar</button></div><div class="movement-amount ${m.type==='income'?'income':'expense'}">${m.type==='income'?'+':'−'}${money(m.amount)}</div></div>`).join(''):'<div class="empty">Todavía no hay movimientos.<br>Añade un ingreso o un gasto.</div>'}</div>`}
-else{$('#detailContent').innerHTML=`<div class="panel"><div class="row"><span>Cliente</span><b>${esc(j.client||'—')}</b></div><div class="row"><span>Fecha</span><b>${fmtDate(j.date)}</b></div><div class="row"><span>Estado</span><b>${j.status==='done'?'Finalizado':'En curso'}</b></div><div class="row"><span>Presupuesto</span><b>${money(j.budget)}</b></div><div class="row"><span>Diferencia vs. presupuesto</span><b>${money((Number(j.budget)||0)-t.expense)}</b></div><div class="row"><span>Descripción / notas</span><b>${esc(j.notes||'—')}</b></div></div>`}
+function renderHome(){
+  let t=allTotals();$('#sumIncome').textContent=money(t.income);$('#sumExpense').textContent=money(t.expense);
+  let p=t.income-t.expense;$('#sumProfit').textContent=money(p);$('#sumProfit').className='value '+(p<0?'negative':'positive');
+  let jobs=[...data.jobs].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||0)-(a.createdAt||0)).filter(j=>jobFilter==='all'||j.status===jobFilter);
+  $('#jobCount').textContent=`${data.jobs.length} ${data.jobs.length===1?'obra':'obras'}`;
+  $('#jobList').innerHTML=jobs.length?jobs.map(j=>{let x=totals(j);return `<button class="job" data-open-job="${j.id}"><div class="jobtop"><div><div class="jobname">${esc(j.name)}</div><div class="client">${esc(j.client||'Sin cliente')} · Inicio: ${fmtDate(j.date)}</div></div><span class="badge ${['terminada','facturada','cobrada'].includes(j.status)?'done':''}">${statusLabel(j.status)}</span></div><div class="jobbottom"><div class="jobmetric"><small>Ingresos</small><strong>${money(x.income)}</strong></div><div class="jobmetric"><small>Gastos</small><strong>${money(x.expense)}</strong></div><div class="jobmetric"><small>Beneficio</small><strong class="${x.profit<0?'negative':'positive'}">${money(x.profit)}</strong></div></div></button>`}).join(''):`<div class="empty"><b>${data.jobs.length?'No hay obras en este filtro':'Todavía no hay obras'}</b>${data.jobs.length?'Prueba con otro filtro.':'Pulsa “+ Trabajo” para crear tu primera obra.'}</div>`;
+}
+function renderDetail(){let j=data.jobs.find(x=>x.id===currentJobId);if(!j){showView('homeView');return}let t=totals(j);$('#detailPanel').innerHTML=`<button class="back" id="backHome">← Todas las obras</button><div class="detailhead"><div><div class="detailtitle">${esc(j.name)}</div><div class="detailmeta">${esc(j.client||'Sin cliente')} · Inicio: ${fmtDate(j.date)}</div></div><span class="badge ${['terminada','facturada','cobrada'].includes(j.status)?'done':''}">${statusLabel(j.status)}</span></div><div class="summary" style="margin-top:18px"><div class="stat"><div class="label">Ingresos</div><div class="value">${money(t.income)}</div></div><div class="stat"><div class="label">Gastos</div><div class="value">${money(t.expense)}</div></div><div class="stat wide"><div class="label">Beneficio</div><div class="value ${t.profit<0?'negative':'positive'}">${money(t.profit)}</div></div></div><div class="detailactions"><button class="smallbtn" id="editJob">Editar obra</button><button class="smallbtn danger" id="deleteJob">Eliminar</button></div>`;
+if(detailTab==='movements'){let ms=[...(j.movements||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||b.createdAt-a.createdAt);$('#detailContent').innerHTML=`<div class="panel"><div class="sectionhead" style="margin-top:0"><h2>Movimientos</h2><span class="subtle">${ms.length} registros</span></div>${ms.length?ms.map(m=>`<div class="movement"><div><div class="movement-title">${esc(m.concept)}</div><div class="movement-meta">${fmtDate(m.date)} · ${esc(m.category||'Otros')}${m.party?' · '+esc(m.party):''}</div>${m.type==='expense'?`<div class="movement-meta">Factura del proveedor: ${m.invoiced==='yes'?'Sí':'No'}</div>`:''}${m.notes?`<div class="movement-meta">${esc(m.notes)}</div>`:''}<button class="smallbtn danger" style="margin-top:7px;padding:5px 8px" data-delete-movement="${m.id}">Eliminar</button></div><div class="movement-amount ${m.type==='income'?'income':'expense'}">${m.type==='income'?'+':'−'}${money(m.amount)}</div></div>`).join(''):'<div class="empty">Todavía no hay movimientos.<br>Añade un ingreso o un gasto.</div>'}</div>`}
+else{$('#detailContent').innerHTML=`<div class="panel"><div class="row"><span>Cliente</span><b>${esc(j.client||'—')}</b></div><div class="row"><span>Teléfono</span><b>${esc(j.phone||'—')}</b></div><div class="row"><span>Dirección de la obra</span><b>${esc(j.address||'—')}</b></div><div class="row"><span>Fecha de inicio</span><b>${fmtDate(j.date)}</b></div><div class="row"><span>Fecha de finalización</span><b>${fmtDate(j.endDate)}</b></div><div class="row"><span>Estado</span><b>${statusLabel(j.status)}</b></div><div class="row"><span>Presupuesto</span><b>${money(j.budget)}</b></div><div class="row"><span>Gastos registrados</span><b>${money(t.expense)}</b></div><div class="row"><span>Diferencia presupuesto − gastos</span><b>${money((Number(j.budget)||0)-t.expense)}</b></div><div class="row"><span>Descripción / notas</span><b>${esc(j.notes||'—')}</b></div></div>`}
 $$('[data-detailtab]').forEach(b=>b.classList.toggle('active',b.dataset.detailtab===detailTab));
 }
-function renderReports(){let t=allTotals(),p=t.income-t.expense;$('#reportIncome').textContent=money(t.income);$('#reportExpense').textContent=money(t.expense);$('#reportProfit').textContent=money(p);$('#reportProfit').className='value '+(p<0?'negative':'positive');let active=data.jobs.filter(j=>j.status==='active').length,done=data.jobs.filter(j=>j.status==='done').length;$('#reportByStatus').innerHTML=`<h2>Estado de los trabajos</h2><div class="row"><span>En curso</span><b>${active}</b></div><div class="row"><span>Finalizados</span><b>${done}</b></div><div class="row"><span>Total de trabajos</span><b>${data.jobs.length}</b></div>`}
-function openJobForm(job=null){editingJobId=job?.id||null;$('#jobFormTitle').textContent=job?'Editar trabajo':'Nuevo trabajo';let f=$('#jobForm');f.reset();f.elements.date.value=job?.date||todayISO();f.elements.status.value=job?.status||'active';f.elements.name.value=job?.name||'';f.elements.client.value=job?.client||'';f.elements.budget.value=job?.budget??'';f.elements.notes.value=job?.notes||'';showView('jobFormView')}
-function openMovement(type){movementType=type;let j=data.jobs.find(x=>x.id===currentJobId);$('#movementFormTitle').textContent=type==='income'?'Añadir ingreso':'Añadir gasto';$('#movementJobName').textContent=j?.name||'';let f=$('#movementForm');f.reset();f.elements.type.value=type;f.elements.date.value=todayISO();showView('movementFormView')}
+function renderReports(){
+  let t=allTotals(),p=t.income-t.expense;
+  $('#reportIncome').textContent=money(t.income);$('#reportExpense').textContent=money(t.expense);
+  $('#reportProfit').textContent=money(p);$('#reportProfit').className='value '+(p<0?'negative':'positive');
+  $('#reportByStatus').innerHTML=`<h2>Estado de las obras</h2>${['pendiente','en_curso','terminada','facturada','cobrada'].map(s=>`<div class="row"><span>${statusLabel(s)}</span><b>${data.jobs.filter(j=>j.status===s).length}</b></div>`).join('')}<div class="row"><span>Total de obras</span><b>${data.jobs.length}</b></div>`;
+  const categories={};let withInvoice=0,withoutInvoice=0;
+  data.jobs.forEach(j=>(j.movements||[]).forEach(m=>{if(m.type==='expense'){const c=m.category||'Otros';categories[c]=(categories[c]||0)+(Number(m.amount)||0);if(m.invoiced==='yes')withInvoice+=Number(m.amount)||0;else withoutInvoice+=Number(m.amount)||0;}}));
+  const rows=Object.entries(categories).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="row"><span>${esc(c)}</span><b>${money(n)}</b></div>`).join('');
+  $('#reportByCategory').innerHTML=`<h2>Gastos por tipo</h2>${rows||'<p class="subtle">Todavía no hay gastos registrados.</p>'}<div class="row"><span>Gastos con factura del proveedor</span><b>${money(withInvoice)}</b></div><div class="row"><span>Gastos sin factura del proveedor</span><b>${money(withoutInvoice)}</b></div>`;
+}
+function openJobForm(job=null){editingJobId=job?.id||null;$('#jobFormTitle').textContent=job?'Editar obra':'Nueva obra';let f=$('#jobForm');f.reset();f.elements.date.value=job?.date||todayISO();f.elements.endDate.value=job?.endDate||'';f.elements.status.value=job?.status||'pendiente';f.elements.name.value=job?.name||'';f.elements.client.value=job?.client||'';f.elements.phone.value=job?.phone||'';f.elements.address.value=job?.address||'';f.elements.budget.value=job?.budget??'';f.elements.notes.value=job?.notes||'';showView('jobFormView')}
+function openMovement(type){movementType=type;let j=data.jobs.find(x=>x.id===currentJobId);$('#movementFormTitle').textContent=type==='income'?'Añadir ingreso':'Añadir gasto';$('#movementJobName').textContent=j?.name||'';let f=$('#movementForm');f.reset();f.elements.type.value=type;f.elements.date.value=todayISO();updateMovementFields();showView('movementFormView')}
 function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
-function exportCSV(){let rows=[['Trabajo','Cliente','Fecha','Tipo','Concepto','Categoría','Importe EUR','Proveedor/cliente','Notas']];data.jobs.forEach(j=>(j.movements||[]).forEach(m=>rows.push([j.name,j.client,j.date,m.type==='income'?'Ingreso':'Gasto',m.concept,m.category,m.amount,m.party,m.notes])));download('movimientos-control-trabajos.csv','\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
+function exportCSV(){let rows=[['Obra','Cliente','Teléfono','Dirección','Fecha inicio','Fecha fin','Estado obra','Tipo movimiento','Concepto','Categoría','Importe EUR','Tienda/proveedor o cliente','Factura proveedor','Notas']];data.jobs.forEach(j=>(j.movements||[]).forEach(m=>rows.push([j.name,j.client,j.phone,j.address,j.date,j.endDate,statusLabel(j.status),m.type==='income'?'Ingreso':'Gasto',m.concept,m.category,m.amount,m.party,m.type==='expense'?(m.invoiced==='yes'?'Sí':'No'):'',m.notes])));download('movimientos-control-reformas.csv','\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
 $('#today').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 $('#newJobTop').addEventListener('click',()=>openJobForm());
 $$('.navbtn').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
 $$('.filter').forEach(b=>b.addEventListener('click',()=>{jobFilter=b.dataset.filter;$$('.filter').forEach(x=>x.classList.toggle('active',x===b));renderHome()}));
 $('#jobList').addEventListener('click',e=>{let b=e.target.closest('[data-open-job]');if(b){currentJobId=b.dataset.openJob;detailTab='movements';showView('detailView');renderDetail()}});
-$('#jobForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,old=data.jobs.find(j=>j.id===editingJobId),job={id:old?.id||uid(),createdAt:old?.createdAt||Date.now(),name:f.elements.name.value.trim(),client:f.elements.client.value.trim(),date:f.elements.date.value,status:f.elements.status.value,budget:Number(f.elements.budget.value)||0,notes:f.elements.notes.value.trim(),movements:old?.movements||[]};if(old)data.jobs=data.jobs.map(j=>j.id===old.id?job:j);else data.jobs.push(job);currentJobId=job.id;save();showView('detailView');renderDetail()});
-$('#movementForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,j=data.jobs.find(x=>x.id===currentJobId);if(!j)return;j.movements.push({id:uid(),createdAt:Date.now(),type:f.elements.type.value,concept:f.elements.concept.value.trim(),amount:Number(f.elements.amount.value),date:f.elements.date.value,category:f.elements.category.value,party:f.elements.party.value.trim(),notes:f.elements.notes.value.trim()});save();showView('detailView');renderDetail()});
+$('#jobForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,old=data.jobs.find(j=>j.id===editingJobId),job={id:old?.id||uid(),createdAt:old?.createdAt||Date.now(),name:f.elements.name.value.trim(),client:f.elements.client.value.trim(),phone:f.elements.phone.value.trim(),address:f.elements.address.value.trim(),date:f.elements.date.value,endDate:f.elements.endDate.value,status:f.elements.status.value,budget:Number(f.elements.budget.value)||0,notes:f.elements.notes.value.trim(),movements:old?.movements||[]};if(old)data.jobs=data.jobs.map(j=>j.id===old.id?job:j);else data.jobs.push(job);currentJobId=job.id;save();showView('detailView');renderDetail()});
+$('#movementForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,j=data.jobs.find(x=>x.id===currentJobId);if(!j)return;const type=f.elements.type.value;j.movements.push({id:uid(),createdAt:Date.now(),type,concept:f.elements.concept.value.trim(),amount:Number(f.elements.amount.value),date:f.elements.date.value,category:f.elements.category.value,party:f.elements.party.value.trim(),invoiced:type==='expense'?f.elements.invoiced.value:'',notes:f.elements.notes.value.trim()});save();showView('detailView');renderDetail()});
 $('#detailPanel').addEventListener('click',e=>{if(e.target.closest('#backHome'))showView('homeView');if(e.target.closest('#editJob'))openJobForm(data.jobs.find(j=>j.id===currentJobId));if(e.target.closest('#deleteJob')){if(confirm('¿Eliminar este trabajo y todos sus movimientos?')){data.jobs=data.jobs.filter(j=>j.id!==currentJobId);currentJobId=null;save();showView('homeView')}}});
 $('#detailContent').addEventListener('click',e=>{let b=e.target.closest('[data-delete-movement]');if(b&&confirm('¿Eliminar este movimiento?')){let j=data.jobs.find(x=>x.id===currentJobId);j.movements=j.movements.filter(m=>m.id!==b.dataset.deleteMovement);save();renderDetail()}});
 $$('[data-detailtab]').forEach(b=>b.addEventListener('click',()=>{detailTab=b.dataset.detailtab;renderDetail()}));
-$('#addIncome').addEventListener('click',()=>openMovement('income'));$('#addExpense').addEventListener('click',()=>openMovement('expense'));
+$('#addIncome').addEventListener('click',()=>openMovement('income'));$('#addExpense').addEventListener('click',()=>openMovement('expense'));$('#movementForm').elements.type.addEventListener('change',updateMovementFields);
 $$('[data-go-home]').forEach(b=>b.addEventListener('click',()=>showView('homeView')));$$('[data-cancel-movement]').forEach(b=>b.addEventListener('click',()=>{showView('detailView');renderDetail()}));
 $('#exportBtn').addEventListener('click',()=>download('copia-control-trabajos.json',JSON.stringify(data,null,2),'application/json'));
 $('#backupBtn').addEventListener('click',()=>download('copia-control-trabajos-'+todayISO()+'.json',JSON.stringify(data,null,2),'application/json'));
@@ -145,6 +200,7 @@ $('#csvBtn').addEventListener('click',exportCSV);
 $('#clearBtn').addEventListener('click',()=>{if(confirm('¿Seguro que quieres borrar TODOS los trabajos y movimientos? Esta acción no se puede deshacer.')){data={jobs:[]};currentJobId=null;save();showView('homeView')}});
 $('#restoreFile').addEventListener('change',async e=>{let file=e.target.files[0];if(!file)return;try{let parsed=JSON.parse(await file.text());if(!parsed||!Array.isArray(parsed.jobs))throw Error('Formato no válido');if(confirm('La restauración sustituirá los datos actuales. ¿Continuar?')){data=parsed;save();alert('Copia restaurada correctamente.')}}catch(err){alert('No se pudo restaurar la copia. Comprueba que sea un archivo JSON exportado por esta aplicación.')}e.target.value=''});
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+updateMovementFields();
 renderAll();
 </script>
 </body>
