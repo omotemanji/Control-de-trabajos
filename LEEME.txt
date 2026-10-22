@@ -27,3 +27,11 @@ CAMBIOS DE LA VERSION PARA REFORMAS
 - En materiales, usa la descripción para indicar qué compraste y el campo tienda/proveedor para indicar dónde.
 - Los datos que ya estuvieran guardados se mantienen; los estados antiguos se convierten a los nuevos.
 - Después de actualizar los archivos en GitHub Pages, puede ser necesario cerrar y volver a abrir la aplicación o actualizarla desde Safari.
+
+
+APARTADO DE FOTOS (versión actualizada)
+- Cada obra tiene una pestaña Fotos para elegir una imagen de la galería o hacer una foto con el iPad.
+- Cada foto se guarda con fecha y descripción, y se puede ampliar o eliminar.
+- Las fotos se almacenan localmente en este navegador/dispositivo mediante IndexedDB; no se suben a internet.
+- Las copias JSON incluyen las fotos. Como pueden ocupar bastante, guarda las copias en Archivos y comprueba que se descargan correctamente.
+- Las imágenes se reducen automáticamente para ahorrar espacio. Aun así, no guardes una cantidad ilimitada de fotos y haz copias de seguridad frecuentes.
