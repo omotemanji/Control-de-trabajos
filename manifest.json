@@ -1,7 +1,7 @@
 {
   "name": "Control de Reformas",
   "short_name": "Reformas",
-  "description": "Gestión de obras de reforma, ingresos y gastos",
+  "description": "Gestión de reformas, facturación, ingresos, gastos y fotos",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

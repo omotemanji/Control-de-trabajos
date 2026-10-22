@@ -65,6 +65,8 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
         <option value="pendiente">Pendiente</option><option value="en_curso">En curso</option><option value="terminada">Terminada</option><option value="facturada">Facturada</option><option value="cobrada">Cobrada</option>
       </select></label>
       <label>Presupuesto (€)<input name="budget" type="number" min="0" step="0.01" placeholder="0,00"></label>
+      <div class="formgrid"><label>Fecha de factura<input name="invoiceDate" type="date"></label><label>Importe facturado (€)<input name="invoiceAmount" type="number" min="0" step="0.01" placeholder="Si está facturada"></label></div>
+      <p class="subtle">Para que las finanzas por periodos sean precisas, indica la fecha y el importe de la factura cuando cambies la obra a Facturada o Cobrada.</p>
       <label>Descripción / notas<textarea name="notes" placeholder="Detalles del trabajo..."></textarea></label>
       <div class="formactions"><button type="button" class="smallbtn" data-go-home>Cancelar</button><button class="primary" type="submit">Guardar obra</button></div>
     </form>
@@ -82,6 +84,19 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
       <label>Notas (opcional)<textarea name="notes" placeholder="Detalles adicionales..."></textarea></label>
       <div class="formactions"><button type="button" class="smallbtn" data-cancel-movement>Cancelar</button><button class="primary" type="submit">Guardar movimiento</button></div>
     </form>
+  </section>
+
+  <section id="financeView" class="view">
+    <div class="screen-title">Finanzas</div><div class="screen-sub">Facturación, ingresos reales, gastos y neto por mes, trimestre o año. Los totales se actualizan al registrar movimientos.</div>
+    <div class="panel"><div class="formgrid"><label>Ver por<select id="financeGrouping"><option value="month">Mes</option><option value="quarter">Trimestre</option><option value="year">Año</option></select></label><label id="financeYearLabel">Año<select id="financeYear"></select></label></div><p class="subtle" style="margin-bottom:0">Facturado = importe de las obras en estado Facturada o Cobrada, asignado a su fecha de factura. Ingresado = pagos registrados como movimientos de ingreso.</p></div>
+    <div class="summary">
+      <div class="stat"><div class="label">Facturado</div><div class="value" id="financeBilled">0 €</div></div>
+      <div class="stat"><div class="label">Total ingresado</div><div class="value" id="financeIncome">0 €</div></div>
+      <div class="stat"><div class="label">Total gastado</div><div class="value" id="financeExpense">0 €</div></div>
+      <div class="stat wide"><div class="label">Neto (ingresado − gastado)</div><div class="value positive" id="financeNet">0 €</div></div>
+    </div>
+    <div class="panel"><div class="sectionhead" style="margin-top:0"><h2>Balance por periodo</h2></div><div id="financeRows"></div></div>
+    <div class="notice">El neto es el dinero ingresado menos los gastos registrados; no incluye facturas pendientes de cobro como dinero recibido. La facturación se calcula con las obras en estado Facturada o Cobrada. Para registros antiguos sin fecha/importe de factura, se usa como referencia la fecha de fin (o inicio) y el presupuesto de la obra.</div>
   </section>
 
   <section id="reportsView" class="view">
@@ -106,6 +121,7 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
 </main>
 <nav>
   <button class="navbtn active" data-view="homeView"><span>▦</span>Trabajos</button>
+  <button class="navbtn" data-view="financeView"><span>€</span>Finanzas</button>
   <button class="navbtn" data-view="reportsView"><span>▥</span>Resumen</button>
   <button class="navbtn" data-view="settingsView"><span>⚙</span>Ajustes</button>
 </nav>
@@ -135,6 +151,8 @@ function loadData(){
       if(j.phone==null) j.phone='';
       if(j.address==null) j.address='';
       if(j.endDate==null) j.endDate='';
+      if(j.invoiceDate==null) j.invoiceDate='';
+      if(j.invoiceAmount==null) j.invoiceAmount='';
       j.movements.forEach(m=>{if(m.invoiced==null) m.invoiced='no';});
     });
     return saved;
@@ -162,7 +180,7 @@ function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt
 function totals(job){let income=0,expense=0;(job.movements||[]).forEach(m=>{if(m.type==='income')income+=Number(m.amount)||0;else expense+=Number(m.amount)||0});return {income,expense,profit:income-expense}}
 function allTotals(){return data.jobs.reduce((t,j)=>{let x=totals(j);t.income+=x.income;t.expense+=x.expense;return t},{income:0,expense:0})}
 function showView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));$('#header').style.display=(id==='homeView'||id==='detailView')?'block':'none';window.scrollTo(0,0)}
-function renderAll(){renderHome();renderReports();if(currentJobId&&$('#detailView').classList.contains('active'))renderDetail()}
+function renderAll(){renderHome();renderReports();renderFinance();if(currentJobId&&$('#detailView').classList.contains('active'))renderDetail()}
 function renderHome(){
   let t=allTotals();$('#sumIncome').textContent=money(t.income);$('#sumExpense').textContent=money(t.expense);
   let p=t.income-t.expense;$('#sumProfit').textContent=money(p);$('#sumProfit').className='value '+(p<0?'negative':'positive');
@@ -193,17 +211,49 @@ function renderReports(){
   const rows=Object.entries(categories).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="row"><span>${esc(c)}</span><b>${money(n)}</b></div>`).join('');
   $('#reportByCategory').innerHTML=`<h2>Gastos por tipo</h2>${rows||'<p class="subtle">Todavía no hay gastos registrados.</p>'}<div class="row"><span>Gastos con factura del proveedor</span><b>${money(withInvoice)}</b></div><div class="row"><span>Gastos sin factura del proveedor</span><b>${money(withoutInvoice)}</b></div>`;
 }
-function openJobForm(job=null){editingJobId=job?.id||null;$('#jobFormTitle').textContent=job?'Editar obra':'Nueva obra';let f=$('#jobForm');f.reset();f.elements.date.value=job?.date||todayISO();f.elements.endDate.value=job?.endDate||'';f.elements.status.value=job?.status||'pendiente';f.elements.name.value=job?.name||'';f.elements.client.value=job?.client||'';f.elements.phone.value=job?.phone||'';f.elements.address.value=job?.address||'';f.elements.budget.value=job?.budget??'';f.elements.notes.value=job?.notes||'';showView('jobFormView')}
+function getBilledInfo(job){
+  if(!['facturada','cobrada'].includes(job.status)) return null;
+  const date=job.invoiceDate||job.endDate||job.date||'';
+  const amount=job.invoiceAmount!==''&&job.invoiceAmount!=null?(Number(job.invoiceAmount)||0):(Number(job.budget)||0);
+  return date?{date,amount}:null;
+}
+function financePeriodKey(date,group){if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date))return null;const [y,m]=date.split('-').map(Number);if(group==='month')return `${y}-${String(m).padStart(2,'0')}`;if(group==='quarter')return `${y}-T${Math.ceil(m/3)}`;return String(y)}
+function financePeriodLabel(key,group){if(group==='month'){const [y,m]=key.split('-').map(Number);return new Intl.DateTimeFormat('es-ES',{month:'long',year:'numeric'}).format(new Date(y,m-1,1))}if(group==='quarter'){const [y,q]=key.split('-T');return `T${q} ${y}`}return key}
+function renderFinance(){
+  const grouping=$('#financeGrouping');if(!grouping)return;
+  const group=grouping.value||'month';
+  const allDates=[];data.jobs.forEach(j=>{const b=getBilledInfo(j);if(b)allDates.push(b.date);(j.movements||[]).forEach(m=>{if(m.date)allDates.push(m.date)})});
+  const years=[...new Set([...allDates.map(d=>d.slice(0,4)),String(new Date().getFullYear())])].filter(y=>/^\d{4}$/.test(y)).sort((a,b)=>b.localeCompare(a));
+  const yearSelect=$('#financeYear'),previous=yearSelect.value;yearSelect.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');yearSelect.value=years.includes(previous)?previous:String(new Date().getFullYear());
+  $('#financeYearLabel').style.display=group==='year'?'none':'grid';
+  const selectedYear=yearSelect.value;const buckets={};
+  const ensure=key=>{if(!key)return null;if(!buckets[key])buckets[key]={billed:0,income:0,expense:0};return buckets[key]};
+  data.jobs.forEach(j=>{
+    const b=getBilledInfo(j);if(b){const key=financePeriodKey(b.date,group);if(key&&(group==='year'||key.startsWith(selectedYear)))ensure(key).billed+=b.amount}
+    (j.movements||[]).forEach(m=>{const key=financePeriodKey(m.date,group);if(!key||(group!=='year'&&!key.startsWith(selectedYear)))return;const bucket=ensure(key);if(m.type==='income')bucket.income+=Number(m.amount)||0;else bucket.expense+=Number(m.amount)||0;});
+  });
+  let keys=Object.keys(buckets).sort();
+  if(group==='month'&&selectedYear){keys=Array.from({length:12},(_,i)=>`${selectedYear}-${String(i+1).padStart(2,'0')}`);keys.forEach(ensure)}
+  if(group==='quarter'&&selectedYear){keys=['1','2','3','4'].map(q=>`${selectedYear}-T${q}`);keys.forEach(ensure)}
+  if(group==='year'&&!keys.length)keys=[String(new Date().getFullYear())],ensure(keys[0]);
+  keys.sort();
+  const totals=keys.reduce((t,k)=>{const x=buckets[k];t.billed+=x.billed;t.income+=x.income;t.expense+=x.expense;return t},{billed:0,income:0,expense:0});
+  $('#financeBilled').textContent=money(totals.billed);$('#financeIncome').textContent=money(totals.income);$('#financeExpense').textContent=money(totals.expense);const net=totals.income-totals.expense;$('#financeNet').textContent=money(net);$('#financeNet').className='value '+(net<0?'negative':'positive');
+  $('#financeRows').innerHTML=keys.length?keys.reverse().map(k=>{const x=buckets[k],n=x.income-x.expense;return `<div style="padding:12px 0;border-bottom:1px solid var(--line)"><b style="display:block;margin-bottom:8px;text-transform:capitalize">${esc(financePeriodLabel(k,group))}</b><div class="row"><span>Facturado</span><b>${money(x.billed)}</b></div><div class="row"><span>Ingresado</span><b>${money(x.income)}</b></div><div class="row"><span>Gastado</span><b>${money(x.expense)}</b></div><div class="row"><span><b>Neto</b></span><b class="${n<0?'negative':'positive'}">${money(n)}</b></div></div>`}).join(''):'<p class="subtle">Todavía no hay movimientos ni facturas para mostrar.</p>';
+}
+
+function openJobForm(job=null){editingJobId=job?.id||null;$('#jobFormTitle').textContent=job?'Editar obra':'Nueva obra';let f=$('#jobForm');f.reset();f.elements.date.value=job?.date||todayISO();f.elements.endDate.value=job?.endDate||'';f.elements.status.value=job?.status||'pendiente';f.elements.name.value=job?.name||'';f.elements.client.value=job?.client||'';f.elements.phone.value=job?.phone||'';f.elements.address.value=job?.address||'';f.elements.budget.value=job?.budget??'';f.elements.invoiceDate.value=job?.invoiceDate||'';f.elements.invoiceAmount.value=job?.invoiceAmount??'';f.elements.notes.value=job?.notes||'';showView('jobFormView')}
 function openMovement(type){movementType=type;let j=data.jobs.find(x=>x.id===currentJobId);$('#movementFormTitle').textContent=type==='income'?'Añadir ingreso':'Añadir gasto';$('#movementJobName').textContent=j?.name||'';let f=$('#movementForm');f.reset();f.elements.type.value=type;f.elements.date.value=todayISO();updateMovementFields();showView('movementFormView')}
 function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
 function exportCSV(){let rows=[['Obra','Cliente','Teléfono','Dirección','Fecha inicio','Fecha fin','Estado obra','Tipo movimiento','Concepto','Categoría','Importe EUR','Tienda/proveedor o cliente','Factura proveedor','Notas']];data.jobs.forEach(j=>(j.movements||[]).forEach(m=>rows.push([j.name,j.client,j.phone,j.address,j.date,j.endDate,statusLabel(j.status),m.type==='income'?'Ingreso':'Gasto',m.concept,m.category,m.amount,m.party,m.type==='expense'?(m.invoiced==='yes'?'Sí':'No'):'',m.notes])));download('movimientos-control-reformas.csv','\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
 $('#today').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 $('#newJobTop').addEventListener('click',()=>openJobForm());
-$$('.navbtn').forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+$$('.navbtn').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);if(b.dataset.view==='financeView')renderFinance()}));
+$('#financeGrouping').addEventListener('change',renderFinance);$('#financeYear').addEventListener('change',renderFinance);
 $$('.filter').forEach(b=>b.addEventListener('click',()=>{jobFilter=b.dataset.filter;$$('.filter').forEach(x=>x.classList.toggle('active',x===b));renderHome()}));
 $('#jobList').addEventListener('click',e=>{let b=e.target.closest('[data-open-job]');if(b){currentJobId=b.dataset.openJob;detailTab='movements';showView('detailView');renderDetail()}});
-$('#jobForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,old=data.jobs.find(j=>j.id===editingJobId),job={id:old?.id||uid(),createdAt:old?.createdAt||Date.now(),name:f.elements.name.value.trim(),client:f.elements.client.value.trim(),phone:f.elements.phone.value.trim(),address:f.elements.address.value.trim(),date:f.elements.date.value,endDate:f.elements.endDate.value,status:f.elements.status.value,budget:Number(f.elements.budget.value)||0,notes:f.elements.notes.value.trim(),movements:old?.movements||[]};if(old)data.jobs=data.jobs.map(j=>j.id===old.id?job:j);else data.jobs.push(job);currentJobId=job.id;save();showView('detailView');renderDetail()});
+$('#jobForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,old=data.jobs.find(j=>j.id===editingJobId),job={id:old?.id||uid(),createdAt:old?.createdAt||Date.now(),name:f.elements.name.value.trim(),client:f.elements.client.value.trim(),phone:f.elements.phone.value.trim(),address:f.elements.address.value.trim(),date:f.elements.date.value,endDate:f.elements.endDate.value,status:f.elements.status.value,budget:Number(f.elements.budget.value)||0,invoiceDate:f.elements.invoiceDate.value,invoiceAmount:f.elements.invoiceAmount.value===''?'':Number(f.elements.invoiceAmount.value)||0,notes:f.elements.notes.value.trim(),movements:old?.movements||[]};if(old)data.jobs=data.jobs.map(j=>j.id===old.id?job:j);else data.jobs.push(job);currentJobId=job.id;save();showView('detailView');renderDetail()});
 $('#movementForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,j=data.jobs.find(x=>x.id===currentJobId);if(!j)return;const type=f.elements.type.value;j.movements.push({id:uid(),createdAt:Date.now(),type,concept:f.elements.concept.value.trim(),amount:Number(f.elements.amount.value),date:f.elements.date.value,category:f.elements.category.value,party:f.elements.party.value.trim(),invoiced:type==='expense'?f.elements.invoiced.value:'',notes:f.elements.notes.value.trim()});save();showView('detailView');renderDetail()});
 $('#detailPanel').addEventListener('click',e=>{if(e.target.closest('#backHome'))showView('homeView');if(e.target.closest('#editJob'))openJobForm(data.jobs.find(j=>j.id===currentJobId));if(e.target.closest('#deleteJob')){if(confirm('¿Eliminar este trabajo y todos sus movimientos?')){data.jobs=data.jobs.filter(j=>j.id!==currentJobId);currentJobId=null;save();showView('homeView')}}});
 $('#detailContent').addEventListener('click',async e=>{let pb=e.target.closest('[data-delete-photo]');if(pb&&confirm('¿Eliminar esta foto?')){await deletePhoto(pb.dataset.deletePhoto);await paintPhotoGallery(currentJobId);return}let b=e.target.closest('[data-delete-movement]');if(b&&confirm('¿Eliminar este movimiento?')){let j=data.jobs.find(x=>x.id===currentJobId);j.movements=j.movements.filter(m=>m.id!==b.dataset.deleteMovement);save();renderDetail()}});

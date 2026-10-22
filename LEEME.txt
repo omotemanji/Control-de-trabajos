@@ -35,3 +35,12 @@ APARTADO DE FOTOS (versión actualizada)
 - Las fotos se almacenan localmente en este navegador/dispositivo mediante IndexedDB; no se suben a internet.
 - Las copias JSON incluyen las fotos. Como pueden ocupar bastante, guarda las copias en Archivos y comprueba que se descargan correctamente.
 - Las imágenes se reducen automáticamente para ahorrar espacio. Aun así, no guardes una cantidad ilimitada de fotos y haz copias de seguridad frecuentes.
+
+
+APARTADO DE FINANZAS (versión actualizada)
+- Nueva pestaña Finanzas con resumen de facturado, ingresado, gastado y neto.
+- Permite consultar por mes, trimestre o año y ver el balance de cada periodo.
+- Para calcular facturado con precisión, en la ficha de cada obra puedes introducir fecha e importe de factura. Solo cuentan las obras con estado Facturada o Cobrada.
+- En obras antiguas sin esos datos, se usa el presupuesto y la fecha de fin (o de inicio) como referencia.
+- El neto es ingresos efectivamente registrados menos gastos registrados; las facturas pendientes no se cuentan como dinero cobrado.
+- Al actualizar, sustituye los cuatro archivos del repositorio. Conserva una copia de seguridad antes de hacer cambios.
