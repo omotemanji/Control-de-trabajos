@@ -95,6 +95,23 @@ form{display:grid;gap:13px}label{display:grid;gap:6px;font-size:13px;font-weight
       <div class="stat"><div class="label">Total gastado</div><div class="value" id="financeExpense">0 €</div></div>
       <div class="stat wide"><div class="label">Neto (ingresado − gastado)</div><div class="value positive" id="financeNet">0 €</div></div>
     </div>
+    <div class="panel">
+      <div class="sectionhead" style="margin-top:0"><h2>Gastos generales</h2><span class="subtle">No asociados a una obra</span></div>
+      <form id="generalExpenseForm">
+        <div class="formgrid">
+          <label>Fecha<input name="date" type="date" required></label>
+          <label>Categoría<select name="category"><option>Declaración trimestral de IVA</option><option>Asesoría</option><option>Varios</option></select></label>
+          <label>Importe (€)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0,00"></label>
+          <label>Proveedor / destinatario<input name="party" placeholder="Ej. Gestoría"></label>
+          <label>Factura recibida<select name="invoiced"><option value="yes">Sí</option><option value="no">No</option></select></label>
+          <label style="grid-column:1/-1">Descripción<textarea name="concept" rows="2" placeholder="Detalle del gasto..." required></textarea></label>
+          <label style="grid-column:1/-1">Observaciones<textarea name="notes" rows="2" placeholder="Opcional"></textarea></label>
+        </div>
+        <button class="primary" type="submit">Añadir gasto general</button>
+      </form>
+      <div class="sectionhead"><h2>Gastos registrados</h2></div>
+      <div id="generalExpenseList"></div>
+    </div>
     <div class="panel"><div class="sectionhead" style="margin-top:0"><h2>Balance por periodo</h2></div><div id="financeRows"></div></div>
     <div class="notice">El neto es el dinero ingresado menos los gastos registrados; no incluye facturas pendientes de cobro como dinero recibido. La facturación se calcula con las obras en estado Facturada o Cobrada. Para registros antiguos sin fecha/importe de factura, se usa como referencia la fecha de fin (o inicio) y el presupuesto de la obra.</div>
   </section>
@@ -142,7 +159,8 @@ const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.get
 function loadData(){
   try {
     const saved=JSON.parse(localStorage.getItem(KEY))||{jobs:[]};
-    if(!Array.isArray(saved.jobs)) return {jobs:[]};
+    if(!Array.isArray(saved.jobs)) return {jobs:[],generalExpenses:[]};
+    if(!Array.isArray(saved.generalExpenses)) saved.generalExpenses=[];
     saved.jobs.forEach(j=>{
       j.movements=Array.isArray(j.movements)?j.movements:[];
       if(j.status==='active') j.status='en_curso';
@@ -178,7 +196,7 @@ function money(n){return new Intl.NumberFormat('es-ES',{style:'currency',currenc
 function fmtDate(s){if(!s)return 'Sin fecha';let [y,m,d]=s.split('-');return `${d}/${m}/${y}`}
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function totals(job){let income=0,expense=0;(job.movements||[]).forEach(m=>{if(m.type==='income')income+=Number(m.amount)||0;else expense+=Number(m.amount)||0});return {income,expense,profit:income-expense}}
-function allTotals(){return data.jobs.reduce((t,j)=>{let x=totals(j);t.income+=x.income;t.expense+=x.expense;return t},{income:0,expense:0})}
+function allTotals(){const t=data.jobs.reduce((a,j)=>{let x=totals(j);a.income+=x.income;a.expense+=x.expense;return a},{income:0,expense:0});t.expense+=(data.generalExpenses||[]).reduce((s,x)=>s+(Number(x.amount)||0),0);return t}
 function showView(id){$$('.view').forEach(v=>v.classList.toggle('active',v.id===id));$$('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.view===id));$('#header').style.display=(id==='homeView'||id==='detailView')?'block':'none';window.scrollTo(0,0)}
 function renderAll(){renderHome();renderReports();renderFinance();if(currentJobId&&$('#detailView').classList.contains('active'))renderDetail()}
 function renderHome(){
@@ -208,6 +226,7 @@ function renderReports(){
   $('#reportByStatus').innerHTML=`<h2>Estado de las obras</h2>${['pendiente','en_curso','terminada','facturada','cobrada'].map(s=>`<div class="row"><span>${statusLabel(s)}</span><b>${data.jobs.filter(j=>j.status===s).length}</b></div>`).join('')}<div class="row"><span>Total de obras</span><b>${data.jobs.length}</b></div>`;
   const categories={};let withInvoice=0,withoutInvoice=0;
   data.jobs.forEach(j=>(j.movements||[]).forEach(m=>{if(m.type==='expense'){const c=m.category||'Otros';categories[c]=(categories[c]||0)+(Number(m.amount)||0);if(m.invoiced==='yes')withInvoice+=Number(m.amount)||0;else withoutInvoice+=Number(m.amount)||0;}}));
+  (data.generalExpenses||[]).forEach(m=>{const c='Gastos generales · '+(m.category||'Varios');categories[c]=(categories[c]||0)+(Number(m.amount)||0);if(m.invoiced==='yes')withInvoice+=Number(m.amount)||0;else withoutInvoice+=Number(m.amount)||0;});
   const rows=Object.entries(categories).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="row"><span>${esc(c)}</span><b>${money(n)}</b></div>`).join('');
   $('#reportByCategory').innerHTML=`<h2>Gastos por tipo</h2>${rows||'<p class="subtle">Todavía no hay gastos registrados.</p>'}<div class="row"><span>Gastos con factura del proveedor</span><b>${money(withInvoice)}</b></div><div class="row"><span>Gastos sin factura del proveedor</span><b>${money(withoutInvoice)}</b></div>`;
 }
@@ -222,7 +241,7 @@ function financePeriodLabel(key,group){if(group==='month'){const [y,m]=key.split
 function renderFinance(){
   const grouping=$('#financeGrouping');if(!grouping)return;
   const group=grouping.value||'month';
-  const allDates=[];data.jobs.forEach(j=>{const b=getBilledInfo(j);if(b)allDates.push(b.date);(j.movements||[]).forEach(m=>{if(m.date)allDates.push(m.date)})});
+  const allDates=[];data.jobs.forEach(j=>{const b=getBilledInfo(j);if(b)allDates.push(b.date);(j.movements||[]).forEach(m=>{if(m.date)allDates.push(m.date)})});(data.generalExpenses||[]).forEach(x=>{if(x.date)allDates.push(x.date)});
   const years=[...new Set([...allDates.map(d=>d.slice(0,4)),String(new Date().getFullYear())])].filter(y=>/^\d{4}$/.test(y)).sort((a,b)=>b.localeCompare(a));
   const yearSelect=$('#financeYear'),previous=yearSelect.value;yearSelect.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');yearSelect.value=years.includes(previous)?previous:String(new Date().getFullYear());
   $('#financeYearLabel').style.display=group==='year'?'none':'grid';
@@ -232,6 +251,7 @@ function renderFinance(){
     const b=getBilledInfo(j);if(b){const key=financePeriodKey(b.date,group);if(key&&(group==='year'||key.startsWith(selectedYear)))ensure(key).billed+=b.amount}
     (j.movements||[]).forEach(m=>{const key=financePeriodKey(m.date,group);if(!key||(group!=='year'&&!key.startsWith(selectedYear)))return;const bucket=ensure(key);if(m.type==='income')bucket.income+=Number(m.amount)||0;else bucket.expense+=Number(m.amount)||0;});
   });
+  (data.generalExpenses||[]).forEach(x=>{const key=financePeriodKey(x.date,group);if(!key||(group!=='year'&&!key.startsWith(selectedYear)))return;ensure(key).expense+=Number(x.amount)||0;});
   let keys=Object.keys(buckets).sort();
   if(group==='month'&&selectedYear){keys=Array.from({length:12},(_,i)=>`${selectedYear}-${String(i+1).padStart(2,'0')}`);keys.forEach(ensure)}
   if(group==='quarter'&&selectedYear){keys=['1','2','3','4'].map(q=>`${selectedYear}-T${q}`);keys.forEach(ensure)}
@@ -240,17 +260,26 @@ function renderFinance(){
   const totals=keys.reduce((t,k)=>{const x=buckets[k];t.billed+=x.billed;t.income+=x.income;t.expense+=x.expense;return t},{billed:0,income:0,expense:0});
   $('#financeBilled').textContent=money(totals.billed);$('#financeIncome').textContent=money(totals.income);$('#financeExpense').textContent=money(totals.expense);const net=totals.income-totals.expense;$('#financeNet').textContent=money(net);$('#financeNet').className='value '+(net<0?'negative':'positive');
   $('#financeRows').innerHTML=keys.length?keys.reverse().map(k=>{const x=buckets[k],n=x.income-x.expense;return `<div style="padding:12px 0;border-bottom:1px solid var(--line)"><b style="display:block;margin-bottom:8px;text-transform:capitalize">${esc(financePeriodLabel(k,group))}</b><div class="row"><span>Facturado</span><b>${money(x.billed)}</b></div><div class="row"><span>Ingresado</span><b>${money(x.income)}</b></div><div class="row"><span>Gastado</span><b>${money(x.expense)}</b></div><div class="row"><span><b>Neto</b></span><b class="${n<0?'negative':'positive'}">${money(n)}</b></div></div>`}).join(''):'<p class="subtle">Todavía no hay movimientos ni facturas para mostrar.</p>';
+  renderGeneralExpenseList();
 }
 
+function renderGeneralExpenseList(){
+  const list=$('#generalExpenseList');if(!list)return;
+  const items=[...(data.generalExpenses||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  list.innerHTML=items.length?items.map(x=>`<div class="movement"><div><div class="movement-title">${esc(x.category)} · ${money(x.amount)}</div><div class="subtle">${fmtDate(x.date)} · ${esc(x.concept)}${x.party?' · '+esc(x.party):''} · Factura: ${x.invoiced==='yes'?'Sí':'No'}</div>${x.notes?`<div class="subtle">${esc(x.notes)}</div>`:''}</div><button class="smallbtn danger" data-delete-general="${x.id}">Eliminar</button></div>`).join(''):'<p class="subtle">Todavía no has registrado gastos generales.</p>';
+}
 function openJobForm(job=null){editingJobId=job?.id||null;$('#jobFormTitle').textContent=job?'Editar obra':'Nueva obra';let f=$('#jobForm');f.reset();f.elements.date.value=job?.date||todayISO();f.elements.endDate.value=job?.endDate||'';f.elements.status.value=job?.status||'pendiente';f.elements.name.value=job?.name||'';f.elements.client.value=job?.client||'';f.elements.phone.value=job?.phone||'';f.elements.address.value=job?.address||'';f.elements.budget.value=job?.budget??'';f.elements.invoiceDate.value=job?.invoiceDate||'';f.elements.invoiceAmount.value=job?.invoiceAmount??'';f.elements.notes.value=job?.notes||'';showView('jobFormView')}
 function openMovement(type){movementType=type;let j=data.jobs.find(x=>x.id===currentJobId);$('#movementFormTitle').textContent=type==='income'?'Añadir ingreso':'Añadir gasto';$('#movementJobName').textContent=j?.name||'';let f=$('#movementForm');f.reset();f.elements.type.value=type;f.elements.date.value=todayISO();updateMovementFields();showView('movementFormView')}
 function download(name,content,type){let blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function csvEscape(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
-function exportCSV(){let rows=[['Obra','Cliente','Teléfono','Dirección','Fecha inicio','Fecha fin','Estado obra','Tipo movimiento','Concepto','Categoría','Importe EUR','Tienda/proveedor o cliente','Factura proveedor','Notas']];data.jobs.forEach(j=>(j.movements||[]).forEach(m=>rows.push([j.name,j.client,j.phone,j.address,j.date,j.endDate,statusLabel(j.status),m.type==='income'?'Ingreso':'Gasto',m.concept,m.category,m.amount,m.party,m.type==='expense'?(m.invoiced==='yes'?'Sí':'No'):'',m.notes])));download('movimientos-control-reformas.csv','\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
+function exportCSV(){let rows=[['Obra','Cliente','Teléfono','Dirección','Fecha inicio','Fecha fin','Estado obra','Tipo movimiento','Concepto','Categoría','Importe EUR','Tienda/proveedor o cliente','Factura proveedor','Notas']];data.jobs.forEach(j=>(j.movements||[]).forEach(m=>rows.push([j.name,j.client,j.phone,j.address,j.date,j.endDate,statusLabel(j.status),m.type==='income'?'Ingreso':'Gasto',m.concept,m.category,m.amount,m.party,m.type==='expense'?(m.invoiced==='yes'?'Sí':'No'):'',m.notes])));(data.generalExpenses||[]).forEach(m=>rows.push(['Gastos generales','','','','','','','Gasto',m.concept,m.category,m.amount,m.party,m.invoiced==='yes'?'Sí':'No',m.notes]));download('movimientos-control-reformas.csv','\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'),'text/csv;charset=utf-8')}
 $('#today').textContent=new Intl.DateTimeFormat('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
 $('#newJobTop').addEventListener('click',()=>openJobForm());
 $$('.navbtn').forEach(b=>b.addEventListener('click',()=>{showView(b.dataset.view);if(b.dataset.view==='financeView')renderFinance()}));
 $('#financeGrouping').addEventListener('change',renderFinance);$('#financeYear').addEventListener('change',renderFinance);
+$('#generalExpenseForm').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;data.generalExpenses=data.generalExpenses||[];data.generalExpenses.push({id:uid(),createdAt:Date.now(),date:f.elements.date.value,category:f.elements.category.value,amount:Number(f.elements.amount.value)||0,party:f.elements.party.value.trim(),invoiced:f.elements.invoiced.value,concept:f.elements.concept.value.trim(),notes:f.elements.notes.value.trim()});f.reset();f.elements.date.value=todayISO();save();});
+$('#generalExpenseList').addEventListener('click',e=>{const b=e.target.closest('[data-delete-general]');if(b&&confirm('¿Eliminar este gasto general?')){data.generalExpenses=(data.generalExpenses||[]).filter(x=>x.id!==b.dataset.deleteGeneral);save();}});
+
 $$('.filter').forEach(b=>b.addEventListener('click',()=>{jobFilter=b.dataset.filter;$$('.filter').forEach(x=>x.classList.toggle('active',x===b));renderHome()}));
 $('#jobList').addEventListener('click',e=>{let b=e.target.closest('[data-open-job]');if(b){currentJobId=b.dataset.openJob;detailTab='movements';showView('detailView');renderDetail()}});
 $('#jobForm').addEventListener('submit',e=>{e.preventDefault();let f=e.currentTarget,old=data.jobs.find(j=>j.id===editingJobId),job={id:old?.id||uid(),createdAt:old?.createdAt||Date.now(),name:f.elements.name.value.trim(),client:f.elements.client.value.trim(),phone:f.elements.phone.value.trim(),address:f.elements.address.value.trim(),date:f.elements.date.value,endDate:f.elements.endDate.value,status:f.elements.status.value,budget:Number(f.elements.budget.value)||0,invoiceDate:f.elements.invoiceDate.value,invoiceAmount:f.elements.invoiceAmount.value===''?'':Number(f.elements.invoiceAmount.value)||0,notes:f.elements.notes.value.trim(),movements:old?.movements||[]};if(old)data.jobs=data.jobs.map(j=>j.id===old.id?job:j);else data.jobs.push(job);currentJobId=job.id;save();showView('detailView');renderDetail()});
@@ -263,10 +292,11 @@ $$('[data-go-home]').forEach(b=>b.addEventListener('click',()=>showView('homeVie
 $('#exportBtn').addEventListener('click',async()=>{try{download('copia-control-reformas.json',JSON.stringify(await exportBackupData(),null,2),'application/json')}catch(e){alert('No se pudo crear la copia. Inténtalo de nuevo.')}});
 $('#backupBtn').addEventListener('click',async()=>{try{download('copia-control-reformas-'+todayISO()+'.json',JSON.stringify(await exportBackupData(),null,2),'application/json')}catch(e){alert('No se pudo crear la copia. Inténtalo de nuevo.')}});
 $('#csvBtn').addEventListener('click',exportCSV);
-$('#clearBtn').addEventListener('click',()=>{if(confirm('¿Seguro que quieres borrar TODOS los trabajos y movimientos? Esta acción no se puede deshacer.')){data={jobs:[]};currentJobId=null;save();showView('homeView')}});
+$('#clearBtn').addEventListener('click',()=>{if(confirm('¿Seguro que quieres borrar TODOS los trabajos y movimientos? Esta acción no se puede deshacer.')){data={jobs:[],generalExpenses:[]};currentJobId=null;save();showView('homeView')}});
 $('#restoreFile').addEventListener('change',async e=>{let file=e.target.files[0];if(!file)return;try{let parsed=JSON.parse(await file.text());if(!parsed||!Array.isArray(parsed.jobs))throw Error('Formato no válido');if(confirm('La restauración sustituirá los datos actuales y las fotos guardadas. ¿Continuar?')){await importBackupData(parsed);alert('Copia restaurada correctamente.')}}catch(err){alert('No se pudo restaurar la copia. Comprueba que sea un archivo JSON exportado por esta aplicación.')}e.target.value=''});
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 updateMovementFields();
+$('#generalExpenseForm').elements.date.value=todayISO();
 renderAll();
 </script>
 </body>

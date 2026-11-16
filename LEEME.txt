@@ -44,3 +44,6 @@ APARTADO DE FINANZAS (versión actualizada)
 - En obras antiguas sin esos datos, se usa el presupuesto y la fecha de fin (o de inicio) como referencia.
 - El neto es ingresos efectivamente registrados menos gastos registrados; las facturas pendientes no se cuentan como dinero cobrado.
 - Al actualizar, sustituye los cuatro archivos del repositorio. Conserva una copia de seguridad antes de hacer cambios.
+
+
+ACTUALIZACIÓN: se añade el apartado Gastos generales (IVA trimestral, asesoría y varios). Se incluyen en los balances mensual, trimestral y anual, en el resumen económico y en las exportaciones JSON/CSV.
