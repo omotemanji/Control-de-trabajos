@@ -47,3 +47,5 @@ APARTADO DE FINANZAS (versión actualizada)
 
 
 ACTUALIZACIÓN: se añade el apartado Gastos generales (IVA trimestral, asesoría y varios). Se incluyen en los balances mensual, trimestral y anual, en el resumen económico y en las exportaciones JSON/CSV.
+
+ACTUALIZACIÓN: se añade la categoría Cuota de autónomos en Gastos generales. Se contabiliza igual que los demás gastos generales en los balances y exportaciones.
